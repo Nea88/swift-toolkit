@@ -14,22 +14,30 @@ import WebKit
 public protocol EPUBNavigatorDelegate: VisualNavigatorDelegate, SelectableNavigatorDelegate {
     // MARK: - WebView Customization
 
-    func navigator(_ navigator: EPUBNavigatorViewController, setupUserScripts userContentController: WKUserContentController)
+    func navigator(
+        _ navigator: EPUBNavigatorViewController,
+        setupUserScripts userContentController: WKUserContentController)
 }
 
-public extension EPUBNavigatorDelegate {
-    func navigator(_ navigator: EPUBNavigatorViewController, setupUserScripts userContentController: WKUserContentController) {}
+extension EPUBNavigatorDelegate {
+    public func navigator(
+        _ navigator: EPUBNavigatorViewController,
+        setupUserScripts userContentController: WKUserContentController
+    ) {}
 
     @available(*, unavailable, message: "Implement navigator(_:didTapAt:) instead.")
-    func middleTapHandler() {}
-    @available(*, unavailable, message: "Implement navigator(_:locationDidChange:) instead, to save the last read location")
-    func willExitPublication(documentIndex: Int, progression: Double?) {}
+    public func middleTapHandler() {}
+    @available(
+        *, unavailable,
+        message: "Implement navigator(_:locationDidChange:) instead, to save the last read location"
+    )
+    public func willExitPublication(documentIndex: Int, progression: Double?) {}
     @available(*, unavailable, message: "Implement navigator(_:locationDidChange:) instead")
-    func didChangedDocumentPage(currentDocumentIndex: Int) {}
+    public func didChangedDocumentPage(currentDocumentIndex: Int) {}
     @available(*, unavailable)
-    func didNavigateViaInternalLinkTap(to documentIndex: Int) {}
+    public func didNavigateViaInternalLinkTap(to documentIndex: Int) {}
     @available(*, unavailable, message: "Implement navigator(_:presentError:) instead")
-    func presentError(_ error: NavigatorError) {}
+    public func presentError(_ error: NavigatorError) {}
 }
 
 public typealias EPUBContentInsets = (top: CGFloat, bottom: CGFloat)
@@ -107,7 +115,8 @@ open class EPUBNavigatorViewController: UIViewController,
             ],
             preloadPreviousPositionCount: Int = 2,
             preloadNextPositionCount: Int = 6,
-            decorationTemplates: [Decoration.Style.Id: HTMLDecorationTemplate] = HTMLDecorationTemplate.defaultTemplates(),
+            decorationTemplates: [Decoration.Style.Id: HTMLDecorationTemplate] =
+                HTMLDecorationTemplate.defaultTemplates(),
             fontFamilyDeclarations: [AnyHTMLFontFamilyDeclaration] = [],
             readiumCSSRSProperties: CSSRSProperties = CSSRSProperties(),
             debugState: Bool = false
@@ -130,7 +139,9 @@ open class EPUBNavigatorViewController: UIViewController,
         didSet { updateCurrentLocation() }
     }
 
-    @available(*, unavailable, message: "See the 2.5.0 migration guide to migrate to the Preferences API")
+    @available(
+        *, unavailable, message: "See the 2.5.0 migration guide to migrate to the Preferences API"
+    )
     public var userSettings: Any { fatalError() }
 
     /// Navigation state.
@@ -181,14 +192,14 @@ open class EPUBNavigatorViewController: UIViewController,
                 self = .idle
             // Moving or jumping to another locator is not allowed during a pending jump.
             case (.jumping, .jump),
-                 (.jumping, .move):
+                (.jumping, .move):
                 return false
 
             case (.moving, .moved):
                 self = .idle
             // Moving or jumping to another locator is not allowed during a pending move.
             case (.moving, .jump),
-                 (.moving, .move):
+                (.moving, .move):
                 return false
 
             default:
@@ -279,8 +290,7 @@ open class EPUBNavigatorViewController: UIViewController,
             viewModel: viewModel,
             initialLocation: initialLocation,
             readingOrder: readingOrder ?? publication.readingOrder,
-            positionsByReadingOrder:
-            // Positions and total progression only make sense in the context
+            positionsByReadingOrder: // Positions and total progression only make sense in the context
             // of the publication's actual reading order. Therefore when
             // provided with a different reading order, we should assume the
             // positions list is empty, and also not compute the
@@ -289,7 +299,10 @@ open class EPUBNavigatorViewController: UIViewController,
         )
     }
 
-    @available(*, unavailable, message: "See the 2.5.0 migration guide to migrate the HTTP server and settings API")
+    @available(
+        *, unavailable,
+        message: "See the 2.5.0 migration guide to migrate the HTTP server and settings API"
+    )
     public convenience init(
         publication: Publication,
         initialLocation: Locator? = nil,
@@ -328,7 +341,8 @@ open class EPUBNavigatorViewController: UIViewController,
         // the current resource. We can use this to go to the next resource.
         view.accessibilityTraits.insert(.causesPageTurn)
 
-        view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapBackground)))
+        view.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(didTapBackground)))
 
         tasks.add {
             await initialize()
@@ -390,7 +404,9 @@ open class EPUBNavigatorViewController: UIViewController,
         viewModel.viewSizeWillChange(view.bounds.size)
     }
 
-    override open func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+    override open func viewWillTransition(
+        to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator
+    ) {
         super.viewWillTransition(to: size, with: coordinator)
 
         viewModel.viewSizeWillChange(size)
@@ -480,7 +496,9 @@ open class EPUBNavigatorViewController: UIViewController,
     }
 
     /// Goes to the next or previous page in the given scroll direction.
-    private func go(to direction: EPUBSpreadView.Direction, options: NavigatorGoOptions) async -> Bool {
+    private func go(to direction: EPUBSpreadView.Direction, options: NavigatorGoOptions) async
+        -> Bool
+    {
         guard
             let paginationView = paginationView,
             on(.move(direction))
@@ -488,8 +506,7 @@ open class EPUBNavigatorViewController: UIViewController,
             return false
         }
 
-        if
-            let spreadView = paginationView.currentView as? EPUBSpreadView,
+        if let spreadView = paginationView.currentView as? EPUBSpreadView,
             await spreadView.go(to: direction, options: options)
         {
             on(.moved)
@@ -502,10 +519,12 @@ open class EPUBNavigatorViewController: UIViewController,
             switch direction {
             case .left:
                 let location: PageLocation = isRTL ? .start : .end
-                return await paginationView.goToIndex(currentSpreadIndex - delta, location: location, options: options)
+                return await paginationView.goToIndex(
+                    currentSpreadIndex - delta, location: location, options: options)
             case .right:
                 let location: PageLocation = isRTL ? .end : .start
-                return await paginationView.goToIndex(currentSpreadIndex + delta, location: location, options: options)
+                return await paginationView.goToIndex(
+                    currentSpreadIndex + delta, location: location, options: options)
             }
         }()
 
@@ -513,7 +532,9 @@ open class EPUBNavigatorViewController: UIViewController,
         return moved
     }
 
-    @available(*, unavailable, message: "See the 2.5.0 migration guide to migrate to the Preferences API")
+    @available(
+        *, unavailable, message: "See the 2.5.0 migration guide to migrate to the Preferences API"
+    )
     public func updateUserSettingStyle() {}
 
     // MARK: - Pagination and spreads
@@ -661,11 +682,10 @@ open class EPUBNavigatorViewController: UIViewController,
         let href = link.url()
         let progression = min(max(spreadView.progression(in: href), 0.0), 1.0)
 
-        if
-            // The positions are not always available, for example a Readium
-            // WebPub doesn't have any unless a Publication Positions Web
-            // Service is provided
-            let index = readingOrder.firstIndexWithHREF(href),
+        if // The positions are not always available, for example a Readium
+        // WebPub doesn't have any unless a Publication Positions Web
+        // Service is provided
+        let index = readingOrder.firstIndexWithHREF(href),
             let positionList = positionsByReadingOrder.getOrNil(index),
             positionList.count > 0
         {
@@ -704,8 +724,7 @@ open class EPUBNavigatorViewController: UIViewController,
 
         currentLocation = await computeCurrentLocation()
 
-        if
-            let delegate = delegate,
+        if let delegate = delegate,
             let location = currentLocation,
             location != notifiedCurrentLocation
         {
@@ -725,7 +744,8 @@ open class EPUBNavigatorViewController: UIViewController,
             return false
         }
 
-        let success = await paginationView.goToIndex(spreadIndex, location: .locator(locator), options: options)
+        let success = await paginationView.goToIndex(
+            spreadIndex, location: .locator(locator), options: options)
         on(.jumped)
         if success {
             delegate?.navigator(self, didJumpTo: locator)
@@ -823,11 +843,15 @@ open class EPUBNavigatorViewController: UIViewController,
                     }
                 } else {
                     for (href, changes) in target.changesByHREF(from: source) {
-                        guard let script = changes.javascript(forGroup: group, styles: config.decorationTemplates) else {
+                        guard
+                            let script = changes.javascript(
+                                forGroup: group, styles: config.decorationTemplates)
+                        else {
                             continue
                         }
                         tasks.addTask { [weak self] in
-                            await self?.loadedSpreadViewForHREF(href)?.evaluateScript(script, inHREF: href)
+                            await self?.loadedSpreadViewForHREF(href)?.evaluateScript(
+                                script, inHREF: href)
                         }
                     }
                 }
@@ -835,7 +859,9 @@ open class EPUBNavigatorViewController: UIViewController,
         }
     }
 
-    public func observeDecorationInteractions(inGroup group: String, onActivated: @escaping OnActivatedCallback) {
+    public func observeDecorationInteractions(
+        inGroup group: String, onActivated: @escaping OnActivatedCallback
+    ) {
         var callbacks = decorationCallbacks[group] ?? []
         callbacks.append(onActivated)
         decorationCallbacks[group] = callbacks
@@ -850,7 +876,8 @@ open class EPUBNavigatorViewController: UIViewController,
             await withTaskGroup(of: Void.self) { tasks in
                 for (_, view) in paginationView.loadedViews {
                     tasks.addTask {
-                        await (view as? EPUBSpreadView)?.evaluateScript("readium.getDecorations('\(group)').setActivable();")
+                        await (view as? EPUBSpreadView)?.evaluateScript(
+                            "readium.getDecorations('\(group)').setActivable();")
                     }
                 }
             }
@@ -905,7 +932,9 @@ open class EPUBNavigatorViewController: UIViewController,
     }
 
     @available(*, unavailable, message: "Use the async variant")
-    public func evaluateJavaScript(_ script: String, completion: ((Result<Any, Error>) -> Void)? = nil) {
+    public func evaluateJavaScript(
+        _ script: String, completion: ((Result<Any, Error>) -> Void)? = nil
+    ) {
         fatalError()
     }
 
@@ -943,7 +972,9 @@ extension EPUBNavigatorViewController: EPUBNavigatorViewModelDelegate {
         }
     }
 
-    func epubNavigatorViewModel(_ viewModel: EPUBNavigatorViewModel, runScript script: String, in scope: EPUBScriptScope) {
+    func epubNavigatorViewModel(
+        _ viewModel: EPUBNavigatorViewModel, runScript script: String, in scope: EPUBScriptScope
+    ) {
         Task {
             await initialized()
 
@@ -1001,9 +1032,11 @@ extension EPUBNavigatorViewController: EPUBSpreadViewDelegate {
                 log(.error, "Can't serialize decoration styles to JSON")
                 return
             }
-            var script = "readium.registerDecorationTemplates(\(stylesJSON.replacingOccurrences(of: "\\n", with: " ")));\n"
+            var script =
+                "readium.registerDecorationTemplates(\(stylesJSON.replacingOccurrences(of: "\\n", with: " ")));\n"
 
-            script += decorationCallbacks
+            script +=
+                decorationCallbacks
                 .compactMap { group, callbacks in
                     guard !callbacks.isEmpty else {
                         return nil
@@ -1018,11 +1051,15 @@ extension EPUBNavigatorViewController: EPUBSpreadViewDelegate {
                 for link in spreadView.spread.links {
                     let href = link.url()
                     for (group, decorations) in self.decorations {
-                        let decorations = decorations
+                        let decorations =
+                            decorations
                             .filter { $0.decoration.locator.href.isEquivalentTo(href) }
                             .map { DecorationChange.add($0.decoration) }
 
-                        guard let script = decorations.javascript(forGroup: group, styles: self.config.decorationTemplates) else {
+                        guard
+                            let script = decorations.javascript(
+                                forGroup: group, styles: self.config.decorationTemplates)
+                        else {
                             continue
                         }
                         tasks.addTask {
@@ -1041,17 +1078,17 @@ extension EPUBNavigatorViewController: EPUBSpreadViewDelegate {
         didTap(at: view.convert(point, from: spreadView))
 
         // Uncomment to debug the coordinates of the tap point.
-//        let tapView = UIView(frame: .init(x: 0, y: 0, width: 50, height: 50))
-//        view.addSubview(tapView)
-//        tapView.backgroundColor = .red
-//        tapView.center = point
-//        tapView.layer.cornerRadius = 25
-//        tapView.layer.masksToBounds = true
-//        UIView.animate(withDuration: 0.8, animations: {
-//            tapView.alpha = 0
-//        }) { _ in
-//            tapView.removeFromSuperview()
-//        }
+        //        let tapView = UIView(frame: .init(x: 0, y: 0, width: 50, height: 50))
+        //        view.addSubview(tapView)
+        //        tapView.backgroundColor = .red
+        //        tapView.center = point
+        //        tapView.layer.cornerRadius = 25
+        //        tapView.layer.masksToBounds = true
+        //        UIView.animate(withDuration: 0.8, animations: {
+        //            tapView.alpha = 0
+        //        }) { _ in
+        //            tapView.removeFromSuperview()
+        //        }
     }
 
     func spreadView(_ spreadView: EPUBSpreadView, didPressKey event: KeyEvent) {
@@ -1068,7 +1105,9 @@ extension EPUBNavigatorViewController: EPUBSpreadViewDelegate {
         delegate?.navigator(self, presentExternalURL: url)
     }
 
-    func spreadView(_ spreadView: EPUBSpreadView, didTapOnInternalLink href: String, clickEvent: ClickEvent?) {
+    func spreadView(
+        _ spreadView: EPUBSpreadView, didTapOnInternalLink href: String, clickEvent: ClickEvent?
+    ) {
         guard
             let url = AnyURL(string: href),
             var link = publication.linkWithHREF(url)
@@ -1079,8 +1118,7 @@ extension EPUBNavigatorViewController: EPUBSpreadViewDelegate {
         link.href = href
 
         // Check to see if this was a noteref link and give delegate the opportunity to display it.
-        if
-            let clickEvent = clickEvent,
+        if let clickEvent = clickEvent,
             let interactive = clickEvent.interactiveElement,
             let (note, referrer) = getNoteData(anchor: interactive, href: href),
             let delegate = delegate
@@ -1145,7 +1183,7 @@ extension EPUBNavigatorViewController: EPUBSpreadViewDelegate {
             let contents = try String(contentsOf: absolute.url)
             let document = try parse(contents)
 
-            guard let aside = try document.select("#\(id)").first() else {
+            guard let aside = try document.select("#\(id)").first()?.parent() else {
                 log(.warning, "Could not find the element '#\(id)' in document \(absolute)")
                 return nil
             }
@@ -1158,22 +1196,29 @@ extension EPUBNavigatorViewController: EPUBSpreadViewDelegate {
         }
     }
 
-    func spreadView(_ spreadView: EPUBSpreadView, didActivateDecoration id: Decoration.Id, inGroup group: String, frame: CGRect?, point: CGPoint?) {
+    func spreadView(
+        _ spreadView: EPUBSpreadView, didActivateDecoration id: Decoration.Id,
+        inGroup group: String, frame: CGRect?, point: CGPoint?
+    ) {
         guard
             let callbacks = decorationCallbacks[group].takeIf({ !$0.isEmpty }),
             let decoration: Decoration = decorations[group]?
-            .first(where: { $0.decoration.id == id })
-            .map(\.decoration)
+                .first(where: { $0.decoration.id == id })
+                .map(\.decoration)
         else {
             return
         }
 
         for callback in callbacks {
-            callback(OnDecorationActivatedEvent(decoration: decoration, group: group, rect: frame, point: point))
+            callback(
+                OnDecorationActivatedEvent(
+                    decoration: decoration, group: group, rect: frame, point: point))
         }
     }
 
-    func spreadView(_ spreadView: EPUBSpreadView, selectionDidChange text: Locator.Text?, frame: CGRect) {
+    func spreadView(
+        _ spreadView: EPUBSpreadView, selectionDidChange text: Locator.Text?, frame: CGRect
+    ) {
         guard
             let locator = currentLocation,
             let text = text
@@ -1209,19 +1254,27 @@ extension EPUBNavigatorViewController: EditingActionsControllerDelegate {
         delegate?.navigator(self, presentError: .copyForbidden)
     }
 
-    func editingActions(_ editingActions: EditingActionsController, shouldShowMenuForSelection selection: Selection) -> Bool {
+    func editingActions(
+        _ editingActions: EditingActionsController, shouldShowMenuForSelection selection: Selection
+    ) -> Bool {
         delegate?.navigator(self, shouldShowMenuForSelection: selection) ?? true
     }
 
-    func editingActions(_ editingActions: EditingActionsController, canPerformAction action: EditingAction, for selection: Selection) -> Bool {
+    func editingActions(
+        _ editingActions: EditingActionsController, canPerformAction action: EditingAction,
+        for selection: Selection
+    ) -> Bool {
         delegate?.navigator(self, canPerformAction: action, for: selection) ?? true
     }
 }
 
 extension EPUBNavigatorViewController: PaginationViewDelegate {
-    func paginationView(_ paginationView: PaginationView, pageViewAtIndex index: Int) -> (UIView & PageView)? {
+    func paginationView(_ paginationView: PaginationView, pageViewAtIndex index: Int) -> (
+        UIView & PageView
+    )? {
         let spread = spreads[index]
-        let spreadViewType = (spread.layout == .fixed) ? EPUBFixedSpreadView.self : EPUBReflowableSpreadView.self
+        let spreadViewType =
+            (spread.layout == .fixed) ? EPUBFixedSpreadView.self : EPUBReflowableSpreadView.self
         let spreadView = spreadViewType.init(
             viewModel: viewModel,
             spread: spread,
@@ -1243,6 +1296,7 @@ extension EPUBNavigatorViewController: PaginationViewDelegate {
     }
 
     func paginationView(_ paginationView: PaginationView, positionCountAtIndex index: Int) -> Int {
-        spreads[index].positionCount(in: readingOrder, positionsByReadingOrder: positionsByReadingOrder)
+        spreads[index].positionCount(
+            in: readingOrder, positionsByReadingOrder: positionsByReadingOrder)
     }
 }
